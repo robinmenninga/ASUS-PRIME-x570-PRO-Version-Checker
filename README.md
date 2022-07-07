@@ -3,7 +3,8 @@
 A script that checks if you have the latest PRIME x570-PRO bios, audio driver and chipset, made in python.
 
 # Pip dependencies
-- idk
+- packaging
+- requests
 
 # Linux dependencies
 - dmidecode
