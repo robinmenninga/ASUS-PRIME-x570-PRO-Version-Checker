@@ -1,0 +1,11 @@
+{
+  "checks": {
+    "bios": true,
+    "networkdriver": true,
+    "chipsetdriver": true,
+    "audiodriver": true
+  },
+  "prefs": {
+    "check_beta": true
+  }
+}
