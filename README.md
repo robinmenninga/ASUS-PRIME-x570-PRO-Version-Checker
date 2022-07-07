@@ -10,7 +10,7 @@ A script that checks if you have the latest PRIME x570-PRO bios, audio driver an
 - dmidecode
 
 # Installation
-After cloning the repo, start by installing all the dependencies.
+After cloning the repo, start by installing all the dependencies. You can do this by executing the command `pip install [package]`.
 
 # Usage
 On Windows, simply execute the provided bat file. You can also open command prompt and execute the command `python check_version.py` (which is what the bat file does).
