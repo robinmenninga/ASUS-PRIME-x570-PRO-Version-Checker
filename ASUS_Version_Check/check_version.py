@@ -136,11 +136,12 @@ def get_download_link(item):
         return ""
 
 def download_updates():
-    answer = input("Would you like to download the updates? This will open your default browser. (Y/n)")
+    answer = input("Would you like to download the update(s)? This will open your default browser. (Y/n)")
     if answer == "y" or answer == "":
         for update in update_arr:
             link = get_download_link(update)
-            webbrowser.open(link)
+            if not link == "":
+                webbrowser.open(link)
 
 def show_update_description():
     for update in update_arr:
