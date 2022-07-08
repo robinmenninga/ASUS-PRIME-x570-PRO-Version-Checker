@@ -15,5 +15,5 @@ After cloning the repo, start by installing all the dependencies. You can do thi
 # Usage
 On Windows, simply execute the provided bat file. You can also open command prompt and execute the command `python check_version.py` (which is what the bat file does).
 
-# Configuration (Windows only)
+# Configuration
 After running the script at least once, a configuration file will be made (config.json). You can choose what you want to be checked by the script by editing the variables in this json file. It is also possible to ignore beta versions. By default, the script will check everything and will also notice you of any beta versions.
