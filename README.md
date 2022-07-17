@@ -5,6 +5,7 @@ A script that checks if you have the latest PRIME x570-PRO bios, audio driver an
 # Pip dependencies
 - packaging
 - requests
+- beautifulsoup4
 
 # Linux dependencies
 - dmidecode

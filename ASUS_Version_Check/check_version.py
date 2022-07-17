@@ -1,6 +1,7 @@
 
 from subprocess import PIPE
 from packaging import version
+from bs4 import BeautifulSoup
 import requests as r
 import subprocess
 import json
@@ -9,6 +10,7 @@ import webbrowser
 
 headers = {'User-Agent': 'lol'}
 bios_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl", headers=headers).json()
+amdsite = r.get("https://www.amd.com/en/support/chipsets/amd-socket-am4/x570", headers=headers)
 
 if "11" in subprocess.run("powershell.exe -EncodedCommand \"RwBlAHQALQBDAGkAbQBJAG4AcwB0AGEAbgBjAGUAIABXAGkAbgAzADIAXwBPAHAAZQByAGEAdABpAG4AZwBTAHkAcwB0AGUAbQAgAHwAIABTAGUAbABlAGMAdAAgAEMAYQBwAHQAaQBvAG4A\"", capture_output=True, text=True).stdout.strip("\n "):
     driver_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl&osid=52", headers=headers).json()
@@ -35,6 +37,7 @@ def get_installed_version(to_check):
         case "chipsetdriver":
             command = subprocess.run("wmic datafile where 'name=\"C:\\\\Program Files (x86)\\\\AMD\\\\Chipset_Software\\\\AMD_Chipset_Drivers.exe\"' get version", capture_output=True, text=True)
             version = command.stdout.strip("Version \n")
+            version = "1"
         case "audiodriver":
             command = subprocess.run("powershell.exe -EncodedCommand \"RwBlAHQALQBXAG0AaQBPAGIAagBlAGMAdAAgAFcAaQBuADMAMgBfAFAAbgBQAFMAaQBnAG4AZQBkAEQAcgBpAHYAZQByACAALQBGAGkAbAB0AGUAcgAgACIARABlAHYAaQBjAGUATgBhAG0AZQAgAD0AIAAnAFIAZQBhAGwAdABlAGsAIABIAGkAZwBoACAARABlAGYAaQBuAGkAdABpAG8AbgAgAEEAdQBkAGkAbwAnACIAIAB8ACAAcwBlAGwAZQBjAHQAIABkAHIAaQB2AGUAcgB2AGUAcgBzAGkAbwBuACAAfAAgAEYAbwByAG0AYQB0AC0AVABhAGIAbABlACAALQBIAGkAZABlAFQAYQBiAGwAZQBIAGUAYQBkAGUAcgBzAA==\"", capture_output=True, text=True)
             version = command.stdout.strip("\n ")
@@ -52,7 +55,10 @@ def get_newest_version(to_check):
         case "networkdriver":
             version = driver_json['Result']['Obj'][0]['Files'][0]['Version']
         case "chipsetdriver":
-            version = driver_json['Result']['Obj'][1]['Files'][0]['Version']
+            if should_check_amdsite():
+                version = BeautifulSoup(amdsite.text, 'html.parser').find_all('div', attrs={"class":"field__item"})[2].text
+            else:
+                version = driver_json['Result']['Obj'][1]['Files'][0]['Version']
         case "audiodriver":
             version = driver_json['Result']['Obj'][2]['Files'][0]['Version']
 
@@ -69,7 +75,11 @@ def is_release(to_check):
         case "networkdriver":
             is_release  = driver_json['Result']['Obj'][0]['Files'][0]['IsRelease']
         case "chipsetdriver":
-            is_release  = driver_json['Result']['Obj'][1]['Files'][0]['IsRelease']
+            if should_check_amdsite():
+                # AMD site does not say if it's a beta version
+                is_release = True
+            else:
+                is_release = driver_json['Result']['Obj'][1]['Files'][0]['IsRelease']
         case "audiodriver":
             is_release  = driver_json['Result']['Obj'][2]['Files'][0]['IsRelease']
 
@@ -88,7 +98,8 @@ def create_config():
             "audiodriver": True
         },
         "prefs": {
-            "check_beta": True
+            "check_beta": True,
+            "amdsite_check": False 
         }
     }
 
@@ -104,14 +115,22 @@ def should_check_beta():
     with open("config.json", "r") as configfile:
         return json.load(configfile)["prefs"]["check_beta"]
 
+def should_check_amdsite():
+    with open("config.json", "r") as configfile:
+        return json.load(configfile)["prefs"]["amdsite_check"]
+
 def config_exists():
     return os.path.isfile("config.json")
 
 def check_corrupt():
     try:
-        with open("config.json", "r") as configfile:
-            json.load(configfile)
-    except ValueError:
+        should_check("bios")
+        should_check("networkdriver")
+        should_check("chipsetdriver")
+        should_check("audiodriver")
+        should_check_beta()
+        should_check_amdsite()
+    except:
         print("Corrupt config file, creating new file and renaming old one.")
         if os.path.isfile("config_corrupt.json"):
             os.remove("config_corrupt.json")
@@ -125,7 +144,11 @@ def get_download_link(item):
         case "networkdriver":
             download_link = driver_json['Result']['Obj'][0]['Files'][0]['DownloadUrl']['Global']
         case "chipsetdriver":
-            download_link = driver_json['Result']['Obj'][1]['Files'][0]['DownloadUrl']['Global']
+            if should_check_amdsite():
+                # AMD site does not allow direct downloads >:(
+                download_link = "https://www.amd.com/en/support/chipsets/amd-socket-am4/x570"
+            else:
+                download_link = driver_json['Result']['Obj'][1]['Files'][0]['DownloadUrl']['Global']
         case "audiodriver":
             download_link = driver_json['Result']['Obj'][2]['Files'][0]['DownloadUrl']['Global']
 
@@ -151,13 +174,21 @@ def show_update_description():
             case "networkdriver":
                 notes = driver_json['Result']['Obj'][0]['Files'][0]['Description']
             case "chipsetdriver":
-                notes = driver_json['Result']['Obj'][1]['Files'][0]['Description']
+                if should_check_amdsite():
+                    notes = BeautifulSoup(r.get(amdsite_releasenotes(), headers=headers).text, 'html.parser').find("div", attrs={"class": "node__content"}).find("ul").text
+                else:
+                    notes = driver_json['Result']['Obj'][1]['Files'][0]['Description']
             case "audiodriver":
                 notes = driver_json['Result']['Obj'][2]['Files'][0]['Description']
 
         print(update.capitalize() + " update log")
         print("--------------------")
         print(notes + "\n")
+
+def amdsite_releasenotes():
+    version = get_newest_version("chipsetdriver")
+    dash_version = version.replace(".", "-")
+    return "https://www.amd.com/en/support/kb/release-notes/rn-ryzen-chipset-" + dash_version
 
 def check_for_updates(to_check):
     print("\t- " + to_check.capitalize() + " -")
