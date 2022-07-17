@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 from subprocess import PIPE
 from packaging import version
