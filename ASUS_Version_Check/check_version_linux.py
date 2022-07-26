@@ -22,7 +22,7 @@ def is_version(str):
     return True
 
 def get_installed_version():
-    version = subprocess.run("sudo dmidecode -s bios-version", stdout=PIPE, text=True).stdout.strip()
+    version = subprocess.run(["sudo", "dmidecode", "-s", "bios-version"], stdout=PIPE, text=True).stdout.strip()
     if is_version(version):
         return version
     else:
