@@ -12,7 +12,8 @@ headers = {'User-Agent': 'lol'}
 bios_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl", headers=headers).json()
 amdsite = r.get("https://www.amd.com/en/support/chipsets/amd-socket-am4/x570", headers=headers)
 
-if "11" in subprocess.run("powershell.exe -EncodedCommand \"RwBlAHQALQBDAGkAbQBJAG4AcwB0AGEAbgBjAGUAIABXAGkAbgAzADIAXwBPAHAAZQByAGEAdABpAG4AZwBTAHkAcwB0AGUAbQAgAHwAIABTAGUAbABlAGMAdAAgAEMAYQBwAHQAaQBvAG4A\"", capture_output=True, text=True).stdout.strip("\n "):
+iswin11 = "11" in subprocess.run("powershell.exe -EncodedCommand \"RwBlAHQALQBDAGkAbQBJAG4AcwB0AGEAbgBjAGUAIABXAGkAbgAzADIAXwBPAHAAZQByAGEAdABpAG4AZwBTAHkAcwB0AGUAbQAgAHwAIABTAGUAbABlAGMAdAAgAEMAYQBwAHQAaQBvAG4A\"", capture_output=True, text=True).stdout.strip("\n ")
+if iswin11:
     driver_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl&osid=52", headers=headers).json()
 else:
     driver_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl&osid=45", headers=headers).json()
@@ -54,7 +55,10 @@ def get_newest_version(to_check):
             version = driver_json['Result']['Obj'][0]['Files'][0]['Version']
         case "chipsetdriver":
             if should_check_amdsite():
-                version = BeautifulSoup(amdsite.text, 'html.parser').find_all('div', attrs={"class":"field__item"})[2].text
+                if iswin11:
+                    version = BeautifulSoup(amdsite.text, 'html.parser').find_all('div', attrs={"class":"field__item"})[2].text
+                else:
+                    version = BeautifulSoup(amdsite.text, 'html.parser').find_all('div', attrs={"class":"field__item"})[31].text
             else:
                 version = driver_json['Result']['Obj'][1]['Files'][0]['Version']
         case "audiodriver":
