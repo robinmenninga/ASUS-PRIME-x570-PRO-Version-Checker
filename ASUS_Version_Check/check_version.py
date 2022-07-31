@@ -20,11 +20,10 @@ else:
 update_arr = []
 
 def is_version(str):
-    str.strip(".")
-    for char in str:
-        if not char.isdigit:
-            return False
-    return True
+    coolstr = str.replace(".", "")
+    if coolstr.isdigit():
+        return True
+    return False
 
 def get_installed_version(to_check):
     match to_check:
