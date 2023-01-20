@@ -15,6 +15,8 @@ global update
 update = False
 
 def is_version(str):
+    if str == "":
+        return False
     str.strip(".")
     for char in str:
         if not char.isdigit:
