@@ -8,17 +8,49 @@ import json
 import os
 import webbrowser
 
-headers = {'User-Agent': 'lol'}
-bios_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl", headers=headers).json()
-amdsite = r.get("https://www.amd.com/en/support/chipsets/amd-socket-am4/x570", headers=headers)
-
-iswin11 = "11" in subprocess.run("powershell.exe -EncodedCommand \"RwBlAHQALQBDAGkAbQBJAG4AcwB0AGEAbgBjAGUAIABXAGkAbgAzADIAXwBPAHAAZQByAGEAdABpAG4AZwBTAHkAcwB0AGUAbQAgAHwAIABTAGUAbABlAGMAdAAgAEMAYQBwAHQAaQBvAG4A\"", capture_output=True, text=True).stdout.strip("\n ")
-if iswin11:
-    driver_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl&osid=52", headers=headers).json()
-else:
-    driver_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl&osid=45", headers=headers).json()
-
 update_arr = []
+unavailable = []
+
+def set_links():
+    global asus_osid
+    global amd_osid
+    global driver_json
+    global bios_json
+    global amdsite
+    global headers
+    headers = {'User-Agent': 'lol'}
+
+    iswin11 = "11" in subprocess.run("powershell.exe -EncodedCommand \"RwBlAHQALQBDAGkAbQBJAG4AcwB0AGEAbgBjAGUAIABXAGkAbgAzADIAXwBPAHAAZQByAGEAdABpAG4AZwBTAHkAcwB0AGUAbQAgAHwAIABTAGUAbABlAGMAdAAgAEMAYQBwAHQAaQBvAG4A\"", capture_output=True, text=True).stdout.strip("\n ")
+    if iswin11:
+        asus_osid = "52"
+        amd_osid = 2
+    else:
+        asus_osid = "45"
+        amd_osid = 31
+
+    try:
+        driver_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl&osid=" + asus_osid, headers=headers)
+        driver_json = driver_response.json()
+    except r.ConnectionError:
+        print("ASUS driver API not available, skipping...")
+        unavailable.append("networkdriver")
+        unavailable.append("audiodriver")
+        if not should_check_amdsite():
+            unavailable.append("chipsetdriver")
+
+    try:
+        bios_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl", headers=headers)
+        bios_json = bios_response.json()
+    except r.ConnectionError:
+        print("ASUS bios API not available, skipping...")
+        unavailable.append("bios")
+
+    if should_check_amdsite():
+        try:
+            amdsite = r.get("https://www.amd.com/en/support/chipsets/amd-socket-am4/x570", headers=headers)
+        except r.ConnectionError:
+            print("AMD driver page not available, skipping...")
+            unavailable.append("chipsetdriver")
 
 def is_version(str):
     coolstr = str.replace(".", "")
@@ -55,10 +87,7 @@ def get_newest_version(to_check):
             version = driver_json['Result']['Obj'][0]['Files'][0]['Version']
         case "chipsetdriver":
             if should_check_amdsite():
-                if iswin11:
-                    version = BeautifulSoup(amdsite.text, 'html.parser').find_all('div', attrs={"class":"field__item"})[2].text
-                else:
-                    version = BeautifulSoup(amdsite.text, 'html.parser').find_all('div', attrs={"class":"field__item"})[31].text
+                version = BeautifulSoup(amdsite.text, 'html.parser').find_all('div', attrs={"class":"field__item"})[amd_osid].text
             else:
                 version = driver_json['Result']['Obj'][1]['Files'][0]['Version']
         case "audiodriver":
@@ -110,6 +139,8 @@ def create_config():
         configfile.write(ser_json)
 
 def should_check(to_check):
+    if to_check in unavailable:
+        return False
     with open("config.json", "r") as configfile:
         return json.load(configfile)["checks"][to_check]
 
@@ -217,8 +248,9 @@ def check_for_updates(to_check):
 if not config_exists():
     print("No config found, creating...")
     create_config()
-    
+
 check_corrupt()
+set_links()
 if should_check("bios"):
     check_for_updates("bios")
 
