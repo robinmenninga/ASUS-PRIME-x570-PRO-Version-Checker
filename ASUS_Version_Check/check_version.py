@@ -133,6 +133,12 @@ def create_config():
         "prefs": {
             "check_beta": True,
             "amdsite_check": False 
+        },
+        "ignore_version": {
+            "bios": [],
+            "networkdriver": [],
+            "chipsetdriver": [],
+            "audiodriver": []
         }
     }
 
@@ -154,6 +160,13 @@ def should_check_amdsite():
     with open("config.toml", "rb") as configfile:
         return toml.load(configfile)["prefs"]["amdsite_check"]
 
+def should_check_version(to_check, version):
+    with open("config.toml", "rb") as configfile:
+        ignore_versions = toml.load(configfile)["ignore_version"][to_check]
+        if version in ignore_versions:
+            return True
+        return False
+
 def config_exists():
     return os.path.isfile("config.toml")
 
@@ -163,6 +176,10 @@ def check_corrupt():
         should_check("networkdriver")
         should_check("chipsetdriver")
         should_check("audiodriver")
+        should_check_version("bios", "1")
+        should_check_version("networkdriver", "1")
+        should_check_version("chipsetdriver", "1")
+        should_check_version("audiodriver", "1")
         should_check_beta()
         should_check_amdsite()
     except:
@@ -235,8 +252,9 @@ def check_for_updates(to_check):
         return
     
     betastop = not (should_check_beta() or is_release(to_check))
+    ignoreversionstop = should_check_version(to_check, newest)
 
-    if version.parse(installed) < version.parse(newest) and not betastop:
+    if version.parse(installed) < version.parse(newest) and not betastop and not ignoreversionstop:
         update_arr.append(to_check)
         print("There is a newer " + to_check + " available!")
         print("Installed version: " + installed)
