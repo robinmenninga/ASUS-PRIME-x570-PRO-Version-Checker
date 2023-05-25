@@ -1,5 +1,7 @@
 
 from subprocess import PIPE
+import tomllib as toml
+import tomli_w
 from packaging import version
 from bs4 import BeautifulSoup
 import requests as r
@@ -121,7 +123,7 @@ def is_release(to_check):
         return True
 
 def create_config():
-    dic_json = {
+    data_dic = {
         "checks": {
             "bios": True,
             "networkdriver": True,
@@ -134,26 +136,26 @@ def create_config():
         }
     }
 
-    ser_json = json.dumps(dic_json, indent = 2)
-    with open("config.json", "w") as configfile:
-        configfile.write(ser_json)
+    with open("config.toml", "wb") as configfile:
+        tomli_w.dump(data_dic, configfile)
+    
 
 def should_check(to_check):
     if to_check in unavailable:
         return False
-    with open("config.json", "r") as configfile:
-        return json.load(configfile)["checks"][to_check]
+    with open("config.toml", "rb") as configfile:
+        return toml.load(configfile)["checks"][to_check]
 
 def should_check_beta():
-    with open("config.json", "r") as configfile:
-        return json.load(configfile)["prefs"]["check_beta"]
+    with open("config.toml", "rb") as configfile:
+        return toml.load(configfile)["prefs"]["check_beta"]
 
 def should_check_amdsite():
-    with open("config.json", "r") as configfile:
-        return json.load(configfile)["prefs"]["amdsite_check"]
+    with open("config.toml", "rb") as configfile:
+        return toml.load(configfile)["prefs"]["amdsite_check"]
 
 def config_exists():
-    return os.path.isfile("config.json")
+    return os.path.isfile("config.toml")
 
 def check_corrupt():
     try:
@@ -165,9 +167,9 @@ def check_corrupt():
         should_check_amdsite()
     except:
         print("Corrupt config file, creating new file and renaming old one.")
-        if os.path.isfile("config_corrupt.json"):
-            os.remove("config_corrupt.json")
-        os.rename("config.json", "config_corrupt.json")
+        if os.path.isfile("config_corrupt.toml"):
+            os.remove("config_corrupt.toml")
+        os.rename("config.toml", "config_corrupt.toml")
         create_config()
 
 def get_download_link(item):
