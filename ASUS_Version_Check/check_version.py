@@ -235,7 +235,11 @@ def show_update_description():
 
         print(update.capitalize() + " update log")
         print("--------------------")
-        print(notes + "\n")
+        if notes != "":
+            print(notes + "\n")
+        else:
+            print("No update log")
+        
 
 def amdsite_releasenotes():
     version = get_newest_version("chipsetdriver")
@@ -258,12 +262,12 @@ def check_for_updates(to_check):
         update_arr.append(to_check)
         print("There is a newer " + to_check + " available!")
         print("Installed version: " + installed)
-        print("Newest version: " + newest + "\n")
+        print("Newest version: " + newest)
         if not (is_release(to_check)):
-            print("Warning! This is a beta version.\n")
+            print("Warning! This is a beta version.")
     else:
         print("You have the latest " + to_check)
-        print("Installed version: " + installed + "\n")
+        print("Installed version: " + installed)
         
 if not config_exists():
     print("No config found, creating...")
@@ -273,16 +277,21 @@ check_corrupt()
 set_links()
 if should_check("bios"):
     check_for_updates("bios")
+    print()
 
 if should_check("networkdriver"):
     check_for_updates("networkdriver")
+    print()
 
 if should_check("chipsetdriver"):
     check_for_updates("chipsetdriver")
+    print()
 
 if should_check("audiodriver"):
     check_for_updates("audiodriver")
+    print()
 
 if len(update_arr) > 0:
     show_update_description()
+    print()
     download_updates()
