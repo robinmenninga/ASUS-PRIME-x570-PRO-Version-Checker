@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from subprocess import PIPE
+import tomllib as toml
+import tomli_w
 from packaging import version
 import requests as r
 import subprocess
@@ -8,20 +10,13 @@ import json
 import os
 import webbrowser
 
-headers = {'User-Agent': 'lol'}
-bios_json = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl", headers=headers).json()
-
-global update
-update = False
+global bios_json
 
 def is_version(str):
-    if str == "":
-        return False
-    str.strip(".")
-    for char in str:
-        if not char.isdigit:
-            return False
-    return True
+    coolstr = str.replace(".", "")
+    if coolstr.isdigit():
+        return True
+    return False
 
 def get_installed_version():
     version = subprocess.run(["sudo", "dmidecode", "-s", "bios-version"], stdout=PIPE, text=True).stdout.strip()
@@ -50,32 +45,41 @@ def is_release():
         return True
 
 def create_config():
-    dic_json = {
+    data_dic = {
         "prefs": {
             "check_beta": True
+        },
+        "ignore_version": {
+            "bios": []
         }
     }
 
-    ser_json = json.dumps(dic_json, indent = 2)
-    with open("config.json", "w") as configfile:
-        configfile.write(ser_json)
+    with open("config.toml", "wb") as configfile:
+        tomli_w.dump(data_dic, configfile)
 
 def should_check_beta():
-    with open("config.json", "r") as configfile:
-        return json.load(configfile)["prefs"]["check_beta"]
+    with open("config.toml", "rb") as configfile:
+        return toml.load(configfile)["prefs"]["check_beta"]
+
+def should_check_version(version):
+    with open("config.toml", "rb") as configfile:
+        ignore_versions = toml.load(configfile)["ignore_version"]["bios"]
+        if version in ignore_versions:
+            return True
+        return False
 
 def config_exists():
-    return os.path.isfile("config.json")
+    return os.path.isfile("config.toml")
 
 def check_corrupt():
     try:
-        with open("config.json", "r") as configfile:
-            json.load(configfile)
-    except ValueError:
+        should_check_beta()
+        should_check_version("1")
+    except:
         print("Corrupt config file, creating new file and renaming old one.")
-        if os.path.isfile("config_corrupt.json"):
-            os.remove("config_corrupt.json")
-        os.rename("config.json", "config_corrupt.json")
+        if os.path.isfile("config_corrupt.toml"):
+            os.remove("config_corrupt.toml")
+        os.rename("config.toml", "config_corrupt.toml")
         create_config()
 
 def get_download_link():
@@ -99,7 +103,10 @@ def show_update_description():
 
     print("Bios update log")
     print("--------------------")
-    print(notes + "\n")
+    if notes != "":
+        print(notes + "\n")
+    else:
+        print("No update log")
 
 def check_for_updates():
     print("\t- Bios -")
@@ -111,23 +118,32 @@ def check_for_updates():
         return
     
     betastop = not (should_check_beta() or is_release())
+    ignoreversionstop = should_check_version(newest)
 
-    if version.parse(installed) < version.parse(newest) and not betastop:
+    if version.parse(installed) < version.parse(newest) and not betastop and not ignoreversionstop:
         print("There is a newer Bios available!")
         print("Installed version: " + installed)
-        print("Newest version: " + newest + "\n")
+        print("Newest version: " + newest)
         if not (is_release()):
-            print("Warning! This is a beta version.\n")
+            print("Warning! This is a beta version.")
         return True
     else:
         print("You have the latest Bios")
-        print("Installed version: " + installed + "\n")
+        print("Installed version: " + installed)
         
 if not config_exists():
     print("No config found, creating...")
     create_config()
     
 check_corrupt()
-if check_for_updates():
-    show_update_description()
-    download_updates()
+try:
+    headers = {'User-Agent': 'lol'}
+    bios_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl", headers=headers)
+    bios_json = bios_response.json()
+    if check_for_updates():
+        print()
+        show_update_description()
+        print()
+        download_updates()
+except r.ConnectionError:
+    print("ASUS bios API not available")
