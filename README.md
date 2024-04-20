@@ -1,4 +1,4 @@
-# ASUS PRIME x570 PRO Version Checker - Python edition
+# ASUS PRIME x570 PRO Version Checker
 
 A script that checks if you have the latest PRIME x570-PRO bios, audio driver, network driver and chipset, made in python.
 
