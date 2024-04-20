@@ -25,10 +25,10 @@ def set_links():
     iswin11 = "11" in subprocess.run("powershell.exe -EncodedCommand \"RwBlAHQALQBDAGkAbQBJAG4AcwB0AGEAbgBjAGUAIABXAGkAbgAzADIAXwBPAHAAZQByAGEAdABpAG4AZwBTAHkAcwB0AGUAbQAgAHwAIABTAGUAbABlAGMAdAAgAEMAYQBwAHQAaQBvAG4A\"", capture_output=True, text=True).stdout.strip("\n ")
     if iswin11:
         asus_osid = "52"
-        amd_osid = 2
+        amd_osid = 0
     else:
         asus_osid = "45"
-        amd_osid = 31
+        amd_osid = 9
 
     try:
         driver_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl&osid=" + asus_osid, headers=headers)
@@ -89,7 +89,7 @@ def get_newest_version(to_check):
             version = driver_json['Result']['Obj'][0]['Files'][0]['Version']
         case "chipsetdriver":
             if should_check_amdsite():
-                version = BeautifulSoup(amdsite.text, 'html.parser').find_all('div', attrs={"class":"field__item"})[amd_osid].text
+                version = BeautifulSoup(amdsite.text, 'html.parser').select('div.col-6 p')[amd_osid].text
             else:
                 version = driver_json['Result']['Obj'][1]['Files'][0]['Version']
         case "audiodriver":
