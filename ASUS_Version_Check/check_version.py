@@ -198,7 +198,7 @@ def get_download_link(item):
         case "chipsetdriver":
             if should_check_amdsite():
                 # AMD site does not allow direct downloads >:(
-                download_link = "https://www.amd.com/en/support/chipsets/amd-socket-am4/x570"
+                download_link = "https://www.amd.com/en/support/downloads/drivers.html/chipsets/am4/x570.html"
             else:
                 download_link = driver_json['Result']['Obj'][1]['Files'][0]['DownloadUrl']['Global']
         case "audiodriver":
@@ -227,7 +227,7 @@ def show_update_description():
                 notes = driver_json['Result']['Obj'][0]['Files'][0]['Description']
             case "chipsetdriver":
                 if should_check_amdsite():
-                    notes = BeautifulSoup(r.get(amdsite_releasenotes(), headers=headers).text, 'html.parser').find("div", attrs={"class": "node__content"}).find("ul").text
+                    notes = amdsite_releasenotes()
                 else:
                     notes = driver_json['Result']['Obj'][1]['Files'][0]['Description']
             case "audiodriver":
@@ -244,7 +244,20 @@ def show_update_description():
 def amdsite_releasenotes():
     version = get_newest_version("chipsetdriver")
     dash_version = version.replace(".", "-")
-    return "https://www.amd.com/en/support/kb/release-notes/rn-ryzen-chipset-" + dash_version
+    mainlink = 'https://www.amd.com/en/resources/support-articles/release-notes/amd-ryzen--chipset-driver-release-notes-'
+    fallbacklink = 'https://www.amd.com/en/resources/support-articles/release-notes/RN-RYZEN-CHIPSET-'
+
+    try:
+        return BeautifulSoup(r.get(mainlink + dash_version + '.html', headers=headers).text, 'html.parser').find('h2', string='Release Highlights').next_sibling.next_sibling.text
+    except AttributeError:
+        pass
+    
+    try:
+        return BeautifulSoup(r.get(fallbacklink + dash_version + '.html', headers=headers).text, 'html.parser').find('h2', string='Release Highlights').next_sibling.next_sibling.text
+    except AttributeError:
+        pass
+    
+    return ""
 
 def check_for_updates(to_check):
     print("\t- " + to_check.capitalize() + " -")
