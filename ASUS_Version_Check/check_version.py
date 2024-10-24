@@ -248,12 +248,16 @@ def amdsite_releasenotes():
     fallbacklink = 'https://www.amd.com/en/resources/support-articles/release-notes/RN-RYZEN-CHIPSET-'
 
     try:
-        return BeautifulSoup(r.get(mainlink + dash_version + '.html', headers=headers).text, 'html.parser').find('h2', string='Release Highlights').next_sibling.next_sibling.text
+        response = r.get(mainlink + dash_version + '.html', headers=headers)
+        response.encoding = 'utf-8'
+        return BeautifulSoup(response.text, 'html.parser').find('h2', string='Release Highlights').next_sibling.next_sibling.text
     except AttributeError:
         pass
     
     try:
-        return BeautifulSoup(r.get(fallbacklink + dash_version + '.html', headers=headers).text, 'html.parser').find('h2', string='Release Highlights').next_sibling.next_sibling.text
+        response = r.get(fallbacklink + dash_version + '.html', headers=headers)
+        response.encoding = 'utf-8'
+        return BeautifulSoup(response.text, 'html.parser').find('h2', string='Release Highlights').next_sibling.next_sibling.text
     except AttributeError:
         pass
     
