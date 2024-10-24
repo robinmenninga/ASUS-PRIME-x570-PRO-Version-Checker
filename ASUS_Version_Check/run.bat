@@ -1,3 +1,3 @@
 @ECHO OFF
-python check_version.py
+py check_version.py
 timeout 3
