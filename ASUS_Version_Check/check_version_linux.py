@@ -138,7 +138,7 @@ if not config_exists():
 check_corrupt()
 try:
     headers = {'User-Agent': 'lol'}
-    bios_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl", headers=headers)
+    bios_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&pdid=10953", headers=headers)
     bios_json = bios_response.json()
     if check_for_updates():
         print()

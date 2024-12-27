@@ -31,7 +31,7 @@ def set_links():
         amd_osid = 9
 
     try:
-        driver_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl&osid=" + asus_osid, headers=headers)
+        driver_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDDrivers?website=us&pdid=10953&osid=" + asus_osid, headers=headers)
         driver_json = driver_response.json()
     except r.ConnectionError:
         print("ASUS driver API not available, skipping...")
@@ -41,7 +41,7 @@ def set_links():
             unavailable.append("chipsetdriver")
 
     try:
-        bios_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&model=PRIME-X570-PRO&pdhashedid=aDvY2vRFhs99nFdl", headers=headers)
+        bios_response = r.get("https://www.asus.com/support/api/product.asmx/GetPDBIOS?website=us&pdid=10953", headers=headers)
         bios_json = bios_response.json()
     except r.ConnectionError:
         print("ASUS bios API not available, skipping...")
